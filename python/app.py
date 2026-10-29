@@ -16,7 +16,7 @@ def upgrade(subscription_id):
     subscription = stripe.Subscription.modify(
         subscription_id,
         items=[{"id": body["item_id"], "price": body["price_id"]}],
-        billing_cycle_anchor="now",
+        billing_cycle_anchor={"type": "now"},
         proration_behavior="create_prorations",
     )
     return jsonify(id=subscription.id, status=subscription.status)
@@ -25,7 +25,7 @@ def upgrade(subscription_id):
 @app.post("/subscriptions/<subscription_id>/resume")
 def resume(subscription_id):
     """Resume a paused subscription without moving its billing date."""
-    subscription = stripe.Subscription.resume(subscription_id, billing_cycle_anchor="unchanged")
+    subscription = stripe.Subscription.resume(subscription_id, billing_cycle_anchor={"type": "unchanged"})
     return jsonify(id=subscription.id, status=subscription.status)
 
 
@@ -36,7 +36,6 @@ def update_payment_method(payment_method_id):
     payment_method = stripe.PaymentMethod.modify(
         payment_method_id,
         billing_details={"name": body["name"], "email": body["email"]},
-        payto={"pay_id": body["pay_id"]},
     )
     return jsonify(id=payment_method.id)
 
@@ -48,6 +47,6 @@ def bank_link():
     session = stripe.financial_connections.Session.create(
         account_holder={"type": "customer", "customer": body["customer_id"]},
         permissions=["balances", "payment_method"],
-        filters={"countries": ["US"]},
+        filters={"country": "US"},
     )
     return jsonify(client_secret=session.client_secret)

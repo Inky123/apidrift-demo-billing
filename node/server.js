@@ -12,7 +12,7 @@ app.use(express.json());
 app.post('/subscriptions/:id/upgrade', async (req, res) => {
   const subscription = await stripe.subscriptions.update(req.params.id, {
     items: [{ id: req.body.itemId, price: req.body.priceId }],
-    billing_cycle_anchor: 'now',
+    billing_cycle_anchor: { type: 'now' },
     proration_behavior: 'create_prorations',
   });
   res.json({ id: subscription.id, status: subscription.status });
@@ -21,7 +21,7 @@ app.post('/subscriptions/:id/upgrade', async (req, res) => {
 // Resume a paused subscription without moving its billing date.
 app.post('/subscriptions/:id/resume', async (req, res) => {
   const subscription = await stripe.subscriptions.resume(req.params.id, {
-    billing_cycle_anchor: 'unchanged',
+    billing_cycle_anchor: { type: 'unchanged' },
   });
   res.json({ id: subscription.id, status: subscription.status });
 });
@@ -32,7 +32,7 @@ app.post('/invoices/preview', async (req, res) => {
     customer: req.body.customerId,
     subscription_details: {
       items: [{ price: req.body.priceId }],
-      billing_cycle_anchor: 1798761600,
+      billing_cycle_anchor: { type: 'timestamp', timestamp: 1798761600 },
     },
   });
   res.json({ total: invoice.total, currency: invoice.currency });
@@ -42,7 +42,6 @@ app.post('/invoices/preview', async (req, res) => {
 app.post('/payment-methods/:id', async (req, res) => {
   const paymentMethod = await stripe.paymentMethods.update(req.params.id, {
     billing_details: { name: req.body.name, email: req.body.email },
-    payto: { pay_id: req.body.payId },
   });
   res.json({ id: paymentMethod.id });
 });
@@ -52,7 +51,7 @@ app.post('/bank-links', async (req, res) => {
   const session = await stripe.financialConnections.sessions.create({
     account_holder: { type: 'customer', customer: req.body.customerId },
     permissions: ['balances', 'payment_method'],
-    filters: { countries: ['US'] },
+    filters: { country: 'US' },
   });
   res.json({ clientSecret: session.client_secret });
 });
